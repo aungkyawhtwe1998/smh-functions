@@ -48,7 +48,7 @@ exports.scheduledFunction = functions.pubsub
         });
     }
 
-    if (currentTime >= 9 * 3600 && currentTime <= 16 * 3600 + 60) {
+    if (currentTime >= 9 * 3600 && currentTime <= 16 * 3600 + 31 * 60) {
       //generate random between 9 AM and 9:1 PM
       await db
         .collection("randomNumber")
@@ -281,7 +281,7 @@ exports.onRandomUpdate = functions.firestore
           });
         }
       });
-      //show normal random
+
       await new Promise((resolve) => setTimeout(resolve, 12000));
 
       await liveLuckyNumberRef.get().then((snapShot) => {
