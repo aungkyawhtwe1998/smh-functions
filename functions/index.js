@@ -167,7 +167,7 @@ exports.onRandomUpdate = functions.firestore
             });
           } else {
             let randomLuckyNumber =
-              set_num.split(".")[1].slice(0, 1) +
+              set_num.split(".")[1].slice(1) +
               value_num.split(".")[1].slice(1);
             await liveLuckyNumberRef.update({
               is_finished: true,
