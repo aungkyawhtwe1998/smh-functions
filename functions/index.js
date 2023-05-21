@@ -95,7 +95,7 @@ exports.scheduledFunction = functions.pubsub
     // 3D
     if (
       currentTime >= 14 * 3600 + 30 * 60 &&
-      currentTime <= 14 * 3600 + 30 * 60 + 10
+      currentTime <= 14 * 3600 + 30 * 60 + 20
     ) {
       let todayDate = dd + "-" + mm + "-" + yyyy;
 
@@ -103,7 +103,7 @@ exports.scheduledFunction = functions.pubsub
         .collection("threeDCalendar")
         .where("date", "==", todayDate)
         .onSnapshot((snapShot) => {
-          if (snapShot.exists) {
+          if (snapShot.docs.length > 0) {
             db.collection("randomNumber")
               .doc("3d")
               .update({
@@ -124,7 +124,7 @@ exports.scheduledFunction = functions.pubsub
 
     if (
       currentTime >= 14 * 3600 + 30 * 60 &&
-      currentTime <= 15 * 3600 + 30 * 60 + 20
+      currentTime <= 16 * 3600 + 30 * 60 + 20
     ) {
       await db
         .collection("randomNumber")
@@ -514,21 +514,25 @@ exports.onThreeDRandomUpdate = functions.firestore
 
     let currentTime =
       date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds();
-    let luckySnap;
+    // let luckySnap;
     const liveLuckyNumberRef = db.collection("liveNumber").doc("3d");
-    await liveLuckyNumberRef.get().then((snapShot) => {
-      luckySnap = snapShot.data();
-    });
+    // await liveLuckyNumberRef.get().then((snapShot) => {
+    //   luckySnap = snapShot.data();
+    // });
+    console.log("3D Doc name ====", docName);
 
     const showLuckNum = async () => {
       await db
         .collection("threeDCalendar")
         .where("date", "==", docName)
         .get()
-        .then(async (snap) => {
-          if (snap.exists) {
-            await db
-              .collection("threeDLuckyNumbers")
+        .then((calendarSnap) => {
+          if (calendarSnap.docs.length > 0) {
+            console.log(
+              "3D Calendar Date====",
+              calendarSnap.docs[0].data().date
+            );
+            db.collection("threeDLuckyNumbers")
               .doc(docName)
               .get()
               .then(async (snap) => {
@@ -549,86 +553,92 @@ exports.onThreeDRandomUpdate = functions.firestore
                 let fixedSetNumber = "";
 
                 if (snap.exists) {
+                  console.log("3D Lucky Number ====", snap.data().luckyNumber);
+
                   fixedSetNumber = snap.data().luckyNumber + "";
                   let lucky_set_num =
-                    set_num.split(".")[0] +
-                    "." +
-                    Math.floor(Math.random() * 9) +
-                    fixedSetNumber.slice(0, 2);
+                    set_num.split(".")[0] + "." + fixedSetNumber.slice(0, 2);
                   let lucky_value_num =
                     value_num.split(".")[0] +
                     "." +
                     Math.floor(Math.random() * 9) +
                     fixedSetNumber.slice(2);
 
-                  await db
-                    .collection("threeDLuckyNumbers")
+                  db.collection("threeDLuckyNumbers")
                     .doc(docName)
                     .update({
                       is_finished: true,
                       timeStamp: admin.firestore.FieldValue.serverTimestamp(),
-                    });
-                  await liveLuckyNumberRef.update({
-                    is_finished: true,
-                    num1: lucky_set_num,
-                    num2: lucky_value_num,
-                    luckyNumber: fixedSetNumber + "",
-                    time: admin.firestore.FieldValue.serverTimestamp(),
-                    upComingSection: "",
-                  });
-                  await db
-                    .collection("threeDCalendar")
-                    .doc(threeDCalendarDoc.id)
-                    .update({
-                      isNext: false,
-                      is_finished: true,
-                      luckyNumber: randomLuckyNumber,
+                    })
+                    .then(() => {
+                      liveLuckyNumberRef
+                        .update({
+                          is_finished: true,
+                          num1: lucky_set_num,
+                          num2: lucky_value_num,
+                          luckyNumber: fixedSetNumber + "",
+                          time: admin.firestore.FieldValue.serverTimestamp(),
+                          upComingSection: "",
+                        })
+                        .then(() => {
+                          db.collection("threeDCalendar")
+                            .doc(threeDCalendarDoc.id)
+                            .update({
+                              isNext: false,
+                              is_finished: true,
+                              luckyNumber: randomLuckyNumber,
+                            });
+                        });
                     });
                 } else {
+                  console.log("Lucky number not exist ====");
                   let randomLuckyNumber =
                     set_num.split(".")[1] + value_num.split(".")[1].slice(1);
-                  await liveLuckyNumberRef.update({
-                    is_finished: true,
-                    luckyNumber: fixedSetNumber + "",
-                    num1: set_num,
-                    num2: value_num,
-                    time: admin.firestore.FieldValue.serverTimestamp(),
-                    upComingSection: "",
-                  });
-                  await db
-                    .collection("threeDLuckyNumbers")
-                    .doc(docName)
-                    .set({
-                      date: todayDate,
-                      id: docName,
-                      is_finished: true,
-                      luckyNumber: randomLuckyNumber,
-                      month: mm + "-" + yyyy,
-                      updatedDate: todayDate,
-                      year: yyyy + "",
-                      timeStamp: admin.firestore.FieldValue.serverTimestamp(),
-                    });
-                  await db
-                    .collection("threeDCalendar")
-                    .doc(threeDCalendarDoc.id)
+                  liveLuckyNumberRef
                     .update({
-                      isNext: false,
                       is_finished: true,
-                      luckyNumber: randomLuckyNumber,
+                      luckyNumber: randomLuckyNumber + "",
+                      num1: set_num,
+                      num2: value_num,
+                      time: admin.firestore.FieldValue.serverTimestamp(),
+                      upComingSection: "",
+                    })
+                    .then(() => {
+                      db.collection("threeDLuckyNumbers")
+                        .doc(docName)
+                        .set({
+                          date: docName,
+                          id: docName,
+                          is_finished: true,
+                          luckyNumber: randomLuckyNumber,
+                          month: mm + "-" + yyyy,
+                          updatedDate: docName,
+                          year: yyyy + "",
+                          timeStamp:
+                            admin.firestore.FieldValue.serverTimestamp(),
+                        })
+                        .then(() => {
+                          db.collection("threeDCalendar")
+                            .doc(threeDCalendarDoc.id)
+                            .update({
+                              isNext: false,
+                              is_finished: true,
+                              luckyNumber: randomLuckyNumber,
+                            });
+                        });
                     });
                 }
               });
             //update calender docs for next session
 
             let nextSessionIndex;
-            const threeDCalendarDoc = snap.docs[0].data();
+            const threeDCalendarDoc = calendarSnap.docs[0].data();
             nextSessionIndex = threeDCalendarDoc.index + 1;
             // TODO:need to remove
             // if (nextSessionIndex > 24) {
             //   nextSessionIndex = 1;
             // }
-            await db
-              .collection("threeDCalendar")
+            db.collection("threeDCalendar")
               .where("index", "==", nextSessionIndex)
               .onSnapshot((snap) => {
                 if (snap.exists) {
