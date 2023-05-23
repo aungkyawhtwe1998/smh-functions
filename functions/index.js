@@ -124,7 +124,7 @@ exports.scheduledFunction = functions.pubsub
 
     if (
       currentTime >= 14 * 3600 + 30 * 60 &&
-      currentTime <= 16 * 3600 + 30 * 60 + 20
+      currentTime <= 15 * 3600 + 30 * 60 + 20
     ) {
       await db
         .collection("randomNumber")
@@ -519,7 +519,6 @@ exports.onThreeDRandomUpdate = functions.firestore
     // await liveLuckyNumberRef.get().then((snapShot) => {
     //   luckySnap = snapShot.data();
     // });
-    console.log("3D Doc name ====", docName);
 
     const showLuckNum = async () => {
       await db
@@ -528,10 +527,10 @@ exports.onThreeDRandomUpdate = functions.firestore
         .get()
         .then((calendarSnap) => {
           if (calendarSnap.docs.length > 0) {
-            console.log(
-              "3D Calendar Date====",
-              calendarSnap.docs[0].data().date
-            );
+            let nextSessionIndex;
+            const threeDCalendarDoc = calendarSnap.docs[0].data();
+            nextSessionIndex = calendarSnap.docs[0].data().index + 1;
+
             db.collection("threeDLuckyNumbers")
               .doc(docName)
               .get()
@@ -553,8 +552,6 @@ exports.onThreeDRandomUpdate = functions.firestore
                 let fixedSetNumber = "";
 
                 if (snap.exists) {
-                  console.log("3D Lucky Number ====", snap.data().luckyNumber);
-
                   fixedSetNumber = snap.data().luckyNumber + "";
                   let lucky_set_num =
                     set_num.split(".")[0] + "." + fixedSetNumber.slice(0, 2);
@@ -586,7 +583,31 @@ exports.onThreeDRandomUpdate = functions.firestore
                             .update({
                               isNext: false,
                               is_finished: true,
-                              luckyNumber: randomLuckyNumber,
+                              luckyNumber: fixedSetNumber,
+                            })
+                            .then(() => {
+                              console.log(
+                                "nex session index ====",
+                                nextSessionIndex
+                              );
+                              db.collection("threeDCalendar")
+                                .where("index", "==", nextSessionIndex)
+                                .get()
+                                .then((snap) => {
+                                  console.log(
+                                    "next session date ====",
+                                    snap.docs[0].data().date
+                                  );
+                                  if (snap.docs.length > 0) {
+                                    const nextThreeDCalendarDoc =
+                                      snap.docs[0].data();
+                                    db.collection("threeDCalendar")
+                                      .doc(nextThreeDCalendarDoc.id)
+                                      .update({
+                                        isNext: true,
+                                      });
+                                  }
+                                });
                             });
                         });
                     });
@@ -624,39 +645,43 @@ exports.onThreeDRandomUpdate = functions.firestore
                               isNext: false,
                               is_finished: true,
                               luckyNumber: randomLuckyNumber,
+                            })
+                            .then(() => {
+                              console.log(
+                                "nex session index ====",
+                                nextSessionIndex
+                              );
+                              db.collection("threeDCalendar")
+                                .where("index", "==", nextSessionIndex)
+                                .get()
+                                .then((snap) => {
+                                  console.log(
+                                    "next session date ====",
+                                    snap.docs[0].data().date
+                                  );
+                                  if (snap.docs.length > 0) {
+                                    const nextThreeDCalendarDoc =
+                                      snap.docs[0].data();
+                                    db.collection("threeDCalendar")
+                                      .doc(nextThreeDCalendarDoc.id)
+                                      .update({
+                                        isNext: true,
+                                      });
+                                  }
+                                });
                             });
                         });
-                    });
-                }
-              });
-            //update calender docs for next session
-
-            let nextSessionIndex;
-            const threeDCalendarDoc = calendarSnap.docs[0].data();
-            nextSessionIndex = threeDCalendarDoc.index + 1;
-            // TODO:need to remove
-            // if (nextSessionIndex > 24) {
-            //   nextSessionIndex = 1;
-            // }
-            db.collection("threeDCalendar")
-              .where("index", "==", nextSessionIndex)
-              .onSnapshot((snap) => {
-                if (snap.exists) {
-                  const nextThreeDCalendarDoc = snap.docs[0].data();
-                  db.collection("threeDCalendar")
-                    .doc(nextThreeDCalendarDoc.id)
-                    .update({
-                      isNext: true,
                     });
                 }
               });
           }
         });
     };
-
+    // currentTime >= 15 * 3600 + 30 * 60 &&
+    // currentTime < 15 * 3600 + 30 * 60 + 10
     if (
       currentTime >= 15 * 3600 + 30 * 60 &&
-      currentTime < 15 * 3600 + 30 * 60 + 10
+      currentTime < 15 * 3600 + 30 * 60 + 20
     ) {
       await showLuckNum();
     } else {
