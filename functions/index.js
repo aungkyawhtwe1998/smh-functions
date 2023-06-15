@@ -222,10 +222,6 @@ exports.onRandomUpdate = functions.firestore
               .doc(docName)
               .get()
               .then(async (twoDLuckyNumberSnap) => {
-                console.log(
-                  "lucky number ++++=",
-                  twoDLuckyNumberSnap.data().luckyNumber
-                );
                 let set_num = (
                   (Math.floor(Math.random() * 900000) +
                     7000000 +
@@ -241,8 +237,12 @@ exports.onRandomUpdate = functions.firestore
                   100
                 ).toFixed(2);
                 let fixedSetNumber = "";
-
                 if (twoDLuckyNumberSnap.exists) {
+                  console.log(
+                    "lucky number ++++=",
+                    twoDLuckyNumberSnap.data().luckyNumber
+                  );
+                  console.log("lucky snapshot exist");
                   fixedSetNumber = twoDLuckyNumberSnap.data().luckyNumber + "";
                   let lucky_set_num =
                     set_num.split(".")[0] +
@@ -282,12 +282,13 @@ exports.onRandomUpdate = functions.firestore
                   let randomLuckyNumber =
                     set_num.split(".")[1].slice(1) +
                     value_num.split(".")[1].slice(1);
+                  console.log("random luck num===", randomLuckyNumber);
                   await liveLuckyNumberRef
                     .update({
                       is_finished: true,
-                      luckyNumber: randomLuckyNumber,
-                      num1: set_num,
-                      num2: value_num,
+                      luckyNumber: randomLuckyNumber + "",
+                      num1: set_num + "",
+                      num2: value_num + "",
                       time: admin.firestore.FieldValue.serverTimestamp(),
                       upComingSection: upComingSection,
                     })
@@ -396,15 +397,15 @@ exports.onRandomUpdate = functions.firestore
     ) {
       await showTwoDLuckyNumber(twelveDoc, "12:00 PM", "02:30 PM");
       await stopRandom();
-    }
-    //  else if (
+    } 
+    // else if (
     //   // test luck num
-    //   currentTime >= 13 * 3600 + 22 * 60 &&
-    //   currentTime < 13 * 3600 + 22 * 60 + 10
+    //   currentTime >= 17 * 3600 + 9 * 60 &&
+    //   currentTime < 17 * 3600 + 9 * 60 + 10
     // ) {
-    //   await showTwoDLuckyNumber(twelveDoc, "12:00 PM", "02:30 PM");
+    //   await showTwoDLuckyNumber(fourDoc, "04:30 PM", "09:30 AM");
     //   await stopRandom();
-    // }
+    // } 
     else if (currentTime >= 14 * 3600 && currentTime <= 14 * 3600 + 10) {
       // test restart
       await restartRandom("02:30 PM");
